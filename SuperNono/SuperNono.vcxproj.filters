@@ -17,10 +17,21 @@
       <UniqueIdentifier>{8E41214B-6785-4CFE-B992-037D68949A14}</UniqueIdentifier>
       <Extensions>inf;inv;inx;mof;mc;</Extensions>
     </Filter>
+    <Filter Include="Comm">
+      <UniqueIdentifier>{aa2f0d29-e8fe-4cb8-be9d-234806b9502a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DriverEntry.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Comm.c">
+      <Filter>Comm</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Comm.h">
+      <Filter>Comm</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

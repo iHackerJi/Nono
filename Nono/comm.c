@@ -8,9 +8,9 @@
 
 
 BOOLEAN	InitDriverNeedInfo() {
-	//还是用IO通讯吧
+
 	hFile = CreateFileA(DEVICE_NAME, GENERIC_READ | GENERIC_WRITE,FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-	if (hFile == INVALID_HANDLE_VALUE)		// 如果设备打开失败，则打印错误码
+	if (hFile == INVALID_HANDLE_VALUE)
 	{
 		printf("%s GetCurrentDirectoryA Error %d", __FUNCTION__, GetLastError());
 		return	FALSE;
@@ -36,13 +36,13 @@ BOOLEAN	GetDriverInfo()
 		printf("%s malloc Error %d", __FUNCTION__, GetLastError());
 		return	FALSE;
 	}
-
-
 	if (!DeviceIoControl(hFile, Comm_GetInfoSize, NULL, 0, &InfoBuffer, InfoSize, &OutLeng, NULL))
 	{
 		printf("%s DeviceIoControl Error %d", __FUNCTION__, GetLastError());
 		return	FALSE;
 	}
+
+
 
 
 }

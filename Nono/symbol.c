@@ -166,8 +166,9 @@ BOOL EnumSymTyoeRoutine(
 }
 
 
-BOOLEAN EnumSymbols(char * ModuleName,EnumSymbolType	Type,PVOID * NeedList,PVOID * OutBuffer) {
-
+BOOLEAN EnumSymbols(char * ModuleName,EnumSymbolType	Type,PVOID * NeedList,PVOID * OutBuffer) 
+{
+	
 	char SymFileName[MAX_PATH] =  { 0 };
 	char ModuleNamePath[MAX_PATH] = { 0 };
 
@@ -296,9 +297,7 @@ BOOLEAN EnumSymbols(char * ModuleName,EnumSymbolType	Type,PVOID * NeedList,PVOID
 		default:	goto _Exit;
 	}
 
-	
 	Ret = TRUE;
-
 
 _Exit:
 	if (pModule)	free(pModule);

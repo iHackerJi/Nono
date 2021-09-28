@@ -10,11 +10,7 @@
 #define  SystemModuleInformation 11
 #define STATUS_INFO_LENGTH_MISMATCH ((NTSTATUS)0xC0000004L)
 
-typedef enum _EnumSymbolType
-{
-	Symbol_Function,
-	Symbol_Type
-}EnumSymbolType;
+
 
 BOOLEAN EnumSymbols(char * ModuleName, EnumSymbolType	Type, PVOID * NeedList, PVOID * OutBuffer);
 
