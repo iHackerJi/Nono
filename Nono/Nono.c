@@ -7,7 +7,7 @@ int main()
 {
 
 	
-	EnumSymbols("ntoskrnl.exe");
+//	EnumSymbols("ntoskrnl.exe", Symbol_Type);
 	
 	system("pause");
 

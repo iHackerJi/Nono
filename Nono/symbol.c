@@ -33,6 +33,8 @@ BOOLEAN EnableDebugPriv(void)
 	return TRUE;
 }
 
+
+
 BOOLEAN	InitSymbols(char * SymbolDownloadPath)
 {
 	char	SymbolPath[MAX_PATH] = { 0 };
@@ -86,23 +88,103 @@ BOOLEAN	InitSymbols(char * SymbolDownloadPath)
 	return	 TRUE;
 }
 
-BOOL EnumSymRoutine(
+BOOL EnumSymFunctionRoutine(
 	PSYMBOL_INFO pSymInfo,
 	ULONG SymbolSize,
 	PVOID UserContext
 ) {
-
+	if (strcmp(pSymInfo->Name,"NtWorkerFactoryWorkerReady") == 0)
+	{
+		printf("%s %p \r\n", pSymInfo->Name, (PVOID)pSymInfo->Address);
+	}
+	
 	return	TRUE;
 }
 
+BOOL EnumSymTyoeRoutine(
+	PSYMBOL_INFO pSymInfo,
+	ULONG SymbolSize,
+	PVOID ModuleBase
+) 
+{
+	if (strcmp(pSymInfo->Name, "_KTHREAD") == 0)
+	{
+		TI_FINDCHILDREN_PARAMS *	SonList = NULL;
 
-BOOLEAN EnumSymbols(char * ModuleName) {
+		DWORD						SonListSize = 0;
+		DWORD						SonCount = 0;
+		BOOLEAN						Ret = TRUE;
+		PWCHAR						TempName = NULL;
+		DWORD						Offset = 0;
+
+
+		Ret = SymGetTypeInfo(hProcess, (DWORD64)ModuleBase, pSymInfo->Index, TI_GET_CHILDRENCOUNT, &SonCount);
+		if (!Ret)
+		{
+			printf("SymGetTypeInfo Erro =%d", GetLastError());
+			goto _Exit;
+		}
+		SonListSize = sizeof(TI_FINDCHILDREN_PARAMS) + sizeof(ULONG) * SonCount;
+		SonList = malloc(SonListSize);
+		ZeroMemory(SonList, SonListSize);
+		SonList->Count = SonCount;	//一定要设置数量，否则拿不到
+
+		Ret = SymGetTypeInfo(hProcess, (DWORD64)ModuleBase, pSymInfo->Index, TI_FINDCHILDREN, SonList);
+		if (!Ret)
+		{
+			printf("SymGetTypeInfo Erro =%d", GetLastError());
+			goto _Exit;
+		}
+
+		for (ULONG i = 0 ; i< SonCount ; i++)
+		{
+			SymGetTypeInfo(hProcess, (DWORD64)ModuleBase, SonList->ChildId[i], TI_GET_SYMNAME, &TempName);
+			if (wcscmp(TempName, L"SystemHeteroCpuPolicy") == 0)
+			{
+				Ret = SymGetTypeInfo(hProcess, (DWORD64)ModuleBase, SonList->ChildId[i], TI_GET_OFFSET, &Offset);
+				if (!Ret)
+				{
+					printf("SymGetTypeInfo Erro =%d", GetLastError());
+					VirtualFree(TempName, 0, MEM_RELEASE);
+					goto _Exit;
+				}
+
+			}
+
+			VirtualFree(TempName, 0, MEM_RELEASE);
+
+		}
+
+
+
+	_Exit:
+		if (SonList)	free(SonList);
+
+	}
+
+	return TRUE;
+}
+
+
+BOOLEAN EnumSymbols(char * ModuleName,EnumSymbolType	Type,PVOID * NeedList,PVOID * OutBuffer) {
 
 	char SymFileName[MAX_PATH] =  { 0 };
-	char ModuleNamePath[MAX_PATH];
+	char ModuleNamePath[MAX_PATH] = { 0 };
 
-	PLOADED_IMAGE	pImage = NULL;
-	BOOLEAN			Ret = FALSE;
+	PRTL_PROCESS_MODULES	pModule = NULL;
+	BOOLEAN					Ret = FALSE;
+	ULONG					RetLeng = 0;
+	NTSTATUS				Status = STATUS_SUCCESS;
+
+	PVOID					ModuleBase = NULL;
+	DWORD					ModuleSize = 0;
+	PLOADED_IMAGE			pImage = NULL;
+
+	if (0 == GetCurrentDirectoryA(MAX_PATH, CurrentDirName))
+	{
+		printf("%s GetCurrentDirectoryA Error %d", __FUNCTION__, GetLastError());
+		return	FALSE;
+	}
 
 	//取出系统模块地址
 	if (!GetSystemDirectoryA(ModuleNamePath, MAX_PATH))
@@ -136,7 +218,48 @@ BOOLEAN EnumSymbols(char * ModuleName) {
 		return FALSE;
 	}
 
-	//加载映像
+	ZwQuerySystemInformation = (ZwQuerySystemInformationType)GetProcAddress(LoadLibraryA("ntdll.dll"), "ZwQuerySystemInformation");
+	if (ZwQuerySystemInformation == NULL)
+	{
+		printf("%s GetZwQuerySystemInformation Error %d", __FUNCTION__, GetLastError());
+		return FALSE;
+	}
+
+	//取出系统模块的地址
+	Status = ZwQuerySystemInformation(SystemModuleInformation, pModule, 0, &RetLeng);
+	if (Status != STATUS_INFO_LENGTH_MISMATCH)
+	{
+		printf("%s ZwQuerySystemInformation Error %d", __FUNCTION__, GetLastError());
+		return FALSE;
+	}
+
+	pModule = malloc(RetLeng);
+	memset(pModule, 0, RetLeng);
+	Status = ZwQuerySystemInformation(SystemModuleInformation, pModule, RetLeng, &RetLeng);
+	if (Status != STATUS_SUCCESS)
+	{
+		printf("%s ZwQuerySystemInformation Error %d", __FUNCTION__, GetLastError());
+		goto _Exit;
+	}
+
+	for (ULONG i = 0; i < pModule->NumberOfModules; i++)
+	{
+		//循环从链表对比
+		if (strstr(pModule->Modules[i].FullPathName, ModuleName))
+		{
+			ModuleBase = pModule->Modules[i].ImageBase;
+			ModuleSize = pModule->Modules[i].ImageSize;
+			break;
+		}
+	}
+
+	if (ModuleBase == NULL && ModuleSize == 0)
+	{
+		printf("%s GetModule Error %d", __FUNCTION__, GetLastError());
+		goto _Exit;
+	}
+
+
 	pImage = ImageLoad(ModuleNamePath, NULL);
 	if (pImage == NULL)
 	{
@@ -144,22 +267,42 @@ BOOLEAN EnumSymbols(char * ModuleName) {
 		goto _Exit;
 	}
 
+
 	//加载符号并解析
-	if (!SymLoadModule64(hProcess, pImage->hFile, pImage->ModuleName, NULL, (DWORD64)pImage->MappedAddress, pImage->SizeOfImage))
+	if (!SymLoadModule64(hProcess, pImage->hFile, pImage->ModuleName, NULL, (DWORD64)ModuleBase, ModuleSize))
 	{
 		printf("%s SymLoadModule64 Error %d", __FUNCTION__, GetLastError());
 		goto _Exit;
 	}
 	
-	if (!SymEnumSymbols(hProcess, (ULONG64)pImage->MappedAddress, NULL, EnumSymRoutine, NULL))
+	//枚举符号
+
+	switch (Type)
 	{
-		printf("%s SymEnumSymbols Error %d", __FUNCTION__, GetLastError());
-		goto _Exit;
+		case Symbol_Function:
+		{
+			if (!SymEnumSymbols(hProcess, (ULONG64)ModuleBase, NULL, EnumSymFunctionRoutine, NULL))
+			{
+				printf("%s SymEnumSymbols Error %d", __FUNCTION__, GetLastError());
+				goto _Exit;
+			}
+			break;
+		}
+		case Symbol_Type:
+		{
+			SymEnumTypes(hProcess, (ULONG64)ModuleBase, EnumSymTyoeRoutine, ModuleBase);
+			break;
+		}
+		default:	goto _Exit;
 	}
+
+	
 	Ret = TRUE;
 
 
 _Exit:
+	if (pModule)	free(pModule);
 	if (pImage)	ImageUnload(pImage);
+
 	return Ret;
 }

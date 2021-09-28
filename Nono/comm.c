@@ -1,39 +1,48 @@
 #include "comm.h"
+#define DEVICE_NAME "\\\\.\\Nono"
 
-BOOLEAN	InitDriverNeedInfo(char * InfoFile) {
-	char InfoFilePath[MAX_PATH] = { 0 };
-	HFILE	hFile = 0;
-	POFSTRUCT	ReOpenBuff = {0};
-	//获取当前路径
-	if (0 == GetCurrentDirectoryA(MAX_PATH, CurrentDirName))
+
+
+#define Comm_GetInfoSize CTL_CODE(FILE_DEVICE_UNKNOWN, 0x800, METHOD_BUFFERED, FILE_ANY_ACCESS)
+#define Comm_GetInfoBuffer CTL_CODE(FILE_DEVICE_UNKNOWN, 0x801, METHOD_BUFFERED, FILE_ANY_ACCESS)
+
+
+BOOLEAN	InitDriverNeedInfo() {
+	//还是用IO通讯吧
+	hFile = CreateFileA(DEVICE_NAME, GENERIC_READ | GENERIC_WRITE,FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+	if (hFile == INVALID_HANDLE_VALUE)		// 如果设备打开失败，则打印错误码
 	{
 		printf("%s GetCurrentDirectoryA Error %d", __FUNCTION__, GetLastError());
 		return	FALSE;
 	}
+	return TRUE;
+}
 
-	if (-1 == sprintf(InfoFilePath, "%s//%s", CurrentDirName, InfoFile))
+BOOLEAN	GetDriverInfo()
+{
+	ULONG	InfoSize = 0;
+	DWORD	OutLeng = 0;
+	PVOID	InfoBuffer = NULL;
+
+	if (!DeviceIoControl(hFile, Comm_GetInfoSize, NULL, 0, &InfoSize, sizeof(InfoSize), &OutLeng, NULL))
 	{
-		printf("%s sprintf Error %d", __FUNCTION__, GetLastError());
+		printf("%s DeviceIoControl Error %d", __FUNCTION__, GetLastError());
 		return	FALSE;
 	}
-	
-	if (!PathFileExistsA(InfoFilePath))
-	{
-		printf("%s InfoFilePath Error %d", __FUNCTION__, GetLastError());
-		return FALSE;
-	}
 
-	//格式如下：
-	//模块名:函数名.函数名.函数名.函数名|
-	//模块名:函数名.函数名.函数名.函数名|
-	//
-	hFile = OpenFile(InfoFilePath, ReOpenBuff, OF_READ);
-	if (HFILE_ERROR == hFile)
+	InfoBuffer = malloc(InfoSize);
+	if (NULL == InfoBuffer)
 	{
-		printf("%s OpenFile Error %d", __FUNCTION__, GetLastError());
-		return FALSE;
+		printf("%s malloc Error %d", __FUNCTION__, GetLastError());
+		return	FALSE;
 	}
 
 
-	return TRUE;
+	if (!DeviceIoControl(hFile, Comm_GetInfoSize, NULL, 0, &InfoBuffer, InfoSize, &OutLeng, NULL))
+	{
+		printf("%s DeviceIoControl Error %d", __FUNCTION__, GetLastError());
+		return	FALSE;
+	}
+
+
 }
