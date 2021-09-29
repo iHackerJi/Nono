@@ -101,14 +101,14 @@ NTSTATUS DispatchIoctrl(PDEVICE_OBJECT pObject, PIRP pIrp)
 			Info = sizeof(InfoOfsize);
 			break;
 		}
-	case CTL_GetFunListInfo:
+		case CTL_GetFunListInfo:
 		{
 			memcpy(pOutputBuff, &g_GetFunctionInfoList, sizeof(g_GetFunctionInfoList));
 			Info = sizeof(g_GetFunctionInfoList);
 
 			break;
 		}
-	case CTL_SendFunListInfo:
+		case CTL_SendFunListInfo:
 		{
 			PSymbolGetFunctionInfoList		GetFunctionInfoList = (PSymbolGetFunctionInfoList)pInputBuff;
 			ULONG	ListCount = sizeof(g_GetFunctionInfoList) / sizeof(SymbolGetFunctionInfoList);
@@ -128,7 +128,7 @@ NTSTATUS DispatchIoctrl(PDEVICE_OBJECT pObject, PIRP pIrp)
 		}
 
 
-	case CTL_GetTypeListSize:
+		case CTL_GetTypeListSize:
 		{
 			InfoOfSizeList InfoOfsize = { 0 };
 			InfoOfsize.StructSize = sizeof(g_GetTypeOffsetInfoList);
@@ -137,13 +137,13 @@ NTSTATUS DispatchIoctrl(PDEVICE_OBJECT pObject, PIRP pIrp)
 			Info = sizeof(InfoOfsize);
 			break;
 		}
-	case CTL_GetTypeListInfo:
+		case CTL_GetTypeListInfo:
 		{
 			memcpy(pOutputBuff, &g_GetTypeOffsetInfoList, sizeof(g_GetTypeOffsetInfoList));
 			Info = sizeof(g_GetTypeOffsetInfoList);
 			break;
 		}
-	case CTL_SendTypeListInfo:
+		case CTL_SendTypeListInfo:
 		{
 			PSymbolGetTypeOffsetList		GetTypeInfoList = (PSymbolGetTypeOffsetList)pInputBuff;
 			ULONG	ListCount = sizeof(g_GetTypeOffsetInfoList) / sizeof(SymbolGetTypeOffsetList);
@@ -162,7 +162,7 @@ NTSTATUS DispatchIoctrl(PDEVICE_OBJECT pObject, PIRP pIrp)
 			}
 			break;
 		}
-	case  CTL_DeleteMark:
+		case  CTL_DeleteMark:
 		{
 
 			IoDeleteDevice(g_pDriverObj->DeviceObject);
@@ -186,7 +186,6 @@ NTSTATUS DispatchIoctrl(PDEVICE_OBJECT pObject, PIRP pIrp)
 	IoCompleteRequest(pIrp, IO_NO_INCREMENT);
 	return Status;
 }
-
 
 NTSTATUS	InitIoComm(PDRIVER_OBJECT pDriverObj)
 {
