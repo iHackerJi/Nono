@@ -25,7 +25,6 @@ int main()
 	Ret = TRUE;
 _Exit:
 
-	system("pause");
 	DeleteMark();
 	if (hFile) CloseHandle(hFile);
 

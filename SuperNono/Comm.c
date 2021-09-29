@@ -1,8 +1,10 @@
 #include "Comm.h"
 
-EXTERN_C UNICODE_STRING	SymbolName;
-EXTERN_C PDRIVER_OBJECT	g_pDriverObj;
-EXTERN_C BOOLEAN		DeviceAndSymbolLinkDelete;
+
+PDRIVER_OBJECT			g_pDriverObj = NULL;;
+UNICODE_STRING			DeviceName = RTL_CONSTANT_STRING(DEVICE_NAME);
+UNICODE_STRING			SymbolName = RTL_CONSTANT_STRING(SYMBOL_NAME);
+BOOLEAN					DeviceAndSymbolLinkDelete = FALSE;
 
 
 PVOID	NONO_NtMapUserPhysicalPagesScatter = 0;
@@ -55,6 +57,14 @@ static	 SymbolGetTypeOffsetList	g_GetTypeOffsetInfoList[] =
 	}
 };
 
+
+void		CommUnload() {
+	if (!DeviceAndSymbolLinkDelete)
+	{
+		IoDeleteDevice(g_pDriverObj->DeviceObject);
+		IoDeleteSymbolicLink(&SymbolName);
+	}
+}
 
 NTSTATUS DispatchCommon(PDEVICE_OBJECT pObject, PIRP pIrp)
 {
@@ -165,10 +175,9 @@ NTSTATUS DispatchIoctrl(PDEVICE_OBJECT pObject, PIRP pIrp)
 		case  CTL_DeleteMark:
 		{
 
-			IoDeleteDevice(g_pDriverObj->DeviceObject);
-			IoDeleteSymbolicLink(&SymbolName);
+			CommUnload();
 
-			for (int i = 0; i < IRP_MJ_MAXIMUM_FUNCTION; ++i)
+			for (int i = 0; i < IRP_MJ_MAXIMUM_FUNCTION +1 ; ++i)
 				g_pDriverObj->MajorFunction[i] = NONO_IopInvalidDeviceRequest;
 
 			DeviceAndSymbolLinkDelete = TRUE;
@@ -189,10 +198,11 @@ NTSTATUS DispatchIoctrl(PDEVICE_OBJECT pObject, PIRP pIrp)
 
 NTSTATUS	InitIoComm(PDRIVER_OBJECT pDriverObj)
 {
-	UNICODE_STRING		DeviceName = RTL_CONSTANT_STRING(DEVICE_NAME);
-	UNICODE_STRING		SymbolName = RTL_CONSTANT_STRING(SYMBOL_NAME);
+
 	NTSTATUS			Status = STATUS_SUCCESS;
 	PDEVICE_OBJECT		pDeviceObject = NULL;
+
+	g_pDriverObj = pDriverObj;
 
 	Status = IoCreateDevice(pDriverObj,0, &DeviceName, FILE_DEVICE_UNKNOWN, 0, FALSE, &pDeviceObject);
 
@@ -209,7 +219,6 @@ NTSTATUS	InitIoComm(PDRIVER_OBJECT pDriverObj)
 	//DO_DEVICE_INITIALIZING
 	pDeviceObject->Flags |= DO_BUFFERED_IO;
 
-
 	Status = IoCreateSymbolicLink(&SymbolName, &DeviceName);
 	if (!NT_SUCCESS(Status))
 	{
@@ -217,7 +226,6 @@ NTSTATUS	InitIoComm(PDRIVER_OBJECT pDriverObj)
 		DbgPrint("IoCreateSymbolicLink failed:%x\n", Status);
 		return Status;
 	}
-
 
 
 	for (int i = 0; i < IRP_MJ_MAXIMUM_FUNCTION + 1; i++)
@@ -230,4 +238,6 @@ NTSTATUS	InitIoComm(PDRIVER_OBJECT pDriverObj)
 
 	return Status;
 }
+
+
 

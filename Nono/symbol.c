@@ -196,13 +196,7 @@ BOOL EnumSymTyoeRoutine(
 			if (SonList)	free(SonList);
 
 		}
-
-
-	
 	}
-
-
-
 	return TRUE;
 }
 

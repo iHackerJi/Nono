@@ -15,9 +15,10 @@
 #define		Symbol_MaxListFlag		"_MaxList"
 
 
-NTSTATUS DispatchCommon(PDEVICE_OBJECT pObject, PIRP pIrp);
-NTSTATUS DispatchIoctrl(PDEVICE_OBJECT pObject, PIRP pIrp);
-
+NTSTATUS	DispatchCommon(PDEVICE_OBJECT pObject, PIRP pIrp);
+NTSTATUS	DispatchIoctrl(PDEVICE_OBJECT pObject, PIRP pIrp);
+NTSTATUS	InitIoComm(PDRIVER_OBJECT pDriverObj);
+void		CommUnload();
 
 
 
