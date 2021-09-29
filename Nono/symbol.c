@@ -93,80 +93,121 @@ BOOL EnumSymFunctionRoutine(
 	ULONG SymbolSize,
 	PVOID UserContext
 ) {
-	if (strcmp(pSymInfo->Name,"NtWorkerFactoryWorkerReady") == 0)
+
+
+	PSymbolGetFunction		Info = (PSymbolGetFunction)UserContext;
+
+	ULONG					ListNumber = 0;
+	for (ULONG i = 0; i < ListCount ; i++)
 	{
-		printf("%s %p \r\n", pSymInfo->Name, (PVOID)pSymInfo->Address);
+
+		if (strcmp(pSymInfo->Name,Info[i].Name) == 0)
+		{
+
+			Info[i].ReceiveFunction = (PVOID*)pSymInfo->Address;
+			printf("解析到 %s %p \r\n", pSymInfo->Name, (PVOID)pSymInfo->Address);
+		}
 	}
-	
+
 	return	TRUE;
 }
 
 BOOL EnumSymTyoeRoutine(
 	PSYMBOL_INFO pSymInfo,
 	ULONG SymbolSize,
-	PVOID ModuleBase
+	PVOID UserContext
 ) 
 {
-	if (strcmp(pSymInfo->Name, "_KTHREAD") == 0)
+
+	PSymbolGetTypeOffset		Info = (PSymbolGetTypeOffset)UserContext;
+	BOOLEAN						IsFlags = FALSE;
+
+
+	for (ULONG K = 0; K <ListCount ; K++)
 	{
-		TI_FINDCHILDREN_PARAMS *	SonList = NULL;
 
-		DWORD						SonListSize = 0;
-		DWORD						SonCount = 0;
-		BOOLEAN						Ret = TRUE;
-		PWCHAR						TempName = NULL;
-		DWORD						Offset = 0;
-
-
-		Ret = SymGetTypeInfo(hProcess, (DWORD64)ModuleBase, pSymInfo->Index, TI_GET_CHILDRENCOUNT, &SonCount);
-		if (!Ret)
+		if (strcmp(pSymInfo->Name, Info[K].ParentName) == 0)
 		{
-			printf("SymGetTypeInfo Erro =%d", GetLastError());
-			goto _Exit;
+			IsFlags = TRUE;
 		}
-		SonListSize = sizeof(TI_FINDCHILDREN_PARAMS) + sizeof(ULONG) * SonCount;
-		SonList = malloc(SonListSize);
-		ZeroMemory(SonList, SonListSize);
-		SonList->Count = SonCount;	//一定要设置数量，否则拿不到
+	}
 
-		Ret = SymGetTypeInfo(hProcess, (DWORD64)ModuleBase, pSymInfo->Index, TI_FINDCHILDREN, SonList);
-		if (!Ret)
-		{
-			printf("SymGetTypeInfo Erro =%d", GetLastError());
-			goto _Exit;
-		}
+	if (IsFlags == FALSE)	return TRUE;
 
-		for (ULONG i = 0 ; i< SonCount ; i++)
+
+	PVOID						ModuleBase = (PVOID)pSymInfo->ModBase;
+	WCHAR						SonName[Symbol_NameLength] = {0};
+
+	for (ULONG K = 0; K < ListCount; K++)
+	{
+
+		if (strcmp(pSymInfo->Name, Info[K].ParentName) == 0)
 		{
-			SymGetTypeInfo(hProcess, (DWORD64)ModuleBase, SonList->ChildId[i], TI_GET_SYMNAME, &TempName);
-			if (wcscmp(TempName, L"SystemHeteroCpuPolicy") == 0)
+			TI_FINDCHILDREN_PARAMS *	SonList = NULL;
+
+			DWORD						SonListSize = 0;
+			DWORD						SonCount = 0;
+			BOOLEAN						Ret = TRUE;
+			PWCHAR						TempName = NULL;
+			ULONG64						Offset = 0;
+
+
+			Ret = SymGetTypeInfo(hProcess, (DWORD64)ModuleBase, pSymInfo->Index, TI_GET_CHILDRENCOUNT, &SonCount);
+			if (!Ret)
 			{
-				Ret = SymGetTypeInfo(hProcess, (DWORD64)ModuleBase, SonList->ChildId[i], TI_GET_OFFSET, &Offset);
-				if (!Ret)
-				{
-					printf("SymGetTypeInfo Erro =%d", GetLastError());
-					VirtualFree(TempName, 0, MEM_RELEASE);
-					goto _Exit;
-				}
+				printf("SymGetTypeInfo Erro =%d", GetLastError());
+				goto _Exit;
+			}
+			SonListSize = sizeof(TI_FINDCHILDREN_PARAMS) + sizeof(ULONG) * SonCount;
+			SonList = malloc(SonListSize);
+			ZeroMemory(SonList, SonListSize);
+			SonList->Count = SonCount;	//一定要设置数量，否则拿不到
 
+			Ret = SymGetTypeInfo(hProcess, (DWORD64)ModuleBase, pSymInfo->Index, TI_FINDCHILDREN, SonList);
+			if (!Ret)
+			{
+				printf("SymGetTypeInfo Erro =%d", GetLastError());
+				goto _Exit;
 			}
 
-			VirtualFree(TempName, 0, MEM_RELEASE);
+			for (ULONG i = 0; i < SonCount; i++)
+			{
+				swprintf(SonName, Symbol_NameLength, L"%hs", Info[K].SonName);
+				SymGetTypeInfo(hProcess, (DWORD64)ModuleBase, SonList->ChildId[i], TI_GET_SYMNAME, &TempName);
+		
+				if (wcscmp(TempName, SonName) == 0)
+				{
+					Ret = SymGetTypeInfo(hProcess, (DWORD64)ModuleBase, SonList->ChildId[i], TI_GET_OFFSET, &Offset);
+					if (!Ret)
+					{
+						printf("SymGetTypeInfo Erro =%d", GetLastError());
+						VirtualFree(TempName, 0, MEM_RELEASE);
+						goto _Exit;
+					}
+					Info[K].Offset = (PULONG64)Offset;
+					printf("解析到 结构 %s %s %x \r\n", Info[K].ParentName, Info[K].SonName, (UINT)Offset);
+				}
+				VirtualFree(TempName, 0, MEM_RELEASE);
+			}
+
+
+
+		_Exit:
+			if (SonList)	free(SonList);
 
 		}
 
 
-
-	_Exit:
-		if (SonList)	free(SonList);
-
+	
 	}
+
+
 
 	return TRUE;
 }
 
 
-BOOLEAN EnumSymbols(char * ModuleName,EnumSymbolType	Type,PVOID * NeedList,PVOID * OutBuffer) 
+BOOLEAN EnumSymbols(char * ModuleName,EnumSymbolType	Type,PVOID  NeedList) 
 {
 	
 	char SymFileName[MAX_PATH] =  { 0 };
@@ -282,7 +323,21 @@ BOOLEAN EnumSymbols(char * ModuleName,EnumSymbolType	Type,PVOID * NeedList,PVOID
 	{
 		case Symbol_Function:
 		{
-			if (!SymEnumSymbols(hProcess, (ULONG64)ModuleBase, NULL, EnumSymFunctionRoutine, NULL))
+
+			PSymbolGetFunction		Info = (PSymbolGetFunction)NeedList;
+		
+			ListCount = 0;
+
+			for (int i = 0 ;  i < Symbol_InfoListMax ; i++)
+			{
+				if (strcmp(Info[i].Name, Symbol_MaxListFlag) == 0)
+				{
+					ListCount = i;
+					break;
+				}
+			}
+
+			if (!SymEnumSymbols(hProcess, (ULONG64)ModuleBase, NULL, EnumSymFunctionRoutine, NeedList))
 			{
 				printf("%s SymEnumSymbols Error %d", __FUNCTION__, GetLastError());
 				goto _Exit;
@@ -291,7 +346,23 @@ BOOLEAN EnumSymbols(char * ModuleName,EnumSymbolType	Type,PVOID * NeedList,PVOID
 		}
 		case Symbol_Type:
 		{
-			SymEnumTypes(hProcess, (ULONG64)ModuleBase, EnumSymTyoeRoutine, ModuleBase);
+
+
+			PSymbolGetTypeOffset		Info = (PSymbolGetTypeOffset)NeedList;
+
+			ListCount = 0;
+
+			for (int i = 0; i < Symbol_InfoListMax; i++)
+			{
+				if (strcmp(Info[i].ParentName, Symbol_MaxListFlag) == 0)
+				{
+					ListCount = i;
+					break;
+				}
+			}
+
+
+			SymEnumTypes(hProcess, (ULONG64)ModuleBase, EnumSymTyoeRoutine, NeedList);
 			break;
 		}
 		default:	goto _Exit;

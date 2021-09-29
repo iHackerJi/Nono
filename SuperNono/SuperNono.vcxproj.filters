@@ -33,5 +33,8 @@
     <ClInclude Include="Comm.h">
       <Filter>Comm</Filter>
     </ClInclude>
+    <ClInclude Include="..\SymbolShare.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

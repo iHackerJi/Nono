@@ -1,54 +1,59 @@
 #include "Comm.h"
 
-int	GetFunctionCount = 0;
-int	GetTypeOffsetCount = 0;
+EXTERN_C UNICODE_STRING	SymbolName;
+EXTERN_C PDRIVER_OBJECT	g_pDriverObj;
+EXTERN_C BOOLEAN		DeviceAndSymbolLinkDelete;
 
 
+PVOID	NONO_NtMapUserPhysicalPagesScatter = 0;
+PVOID	NONO_NtCallbackReturn = 0;
+PVOID	NONO_NtSuspendThread = 0;
+PVOID	NONO_IopInvalidDeviceRequest = 0;
 
-static	SymbolGetInfoList	g_GetFunctionInfoList[] =
+PVOID	NONO_NtUserGetThreadState = 0;
+PVOID	NONO_NtUserPeekMessage = 0;
+
+
+//最多支持 Symbol_InfoListMax 个获取的信息
+static	SymbolGetFunctionInfoList	g_GetFunctionInfoList[] =
 {
 	{
 		"ntoskrnl.exe",
 		{
-			{"WMIInitialize",0},
-			{"PipAddDevicesToBootDriverWorker", 0},
-			{"PnpInitializeBootStartDriver", 0},
-			{Symbol_MaxList, 0},
+			{"NtMapUserPhysicalPagesScatter",&NONO_NtMapUserPhysicalPagesScatter},
+			{"NtCallbackReturn",&NONO_NtCallbackReturn},
+			{"NtSuspendThread",&NONO_NtSuspendThread},
+			{"IopInvalidDeviceRequest",&NONO_IopInvalidDeviceRequest},
+			{Symbol_MaxListFlag,0}
 		}
 	},
 	{
 		"win32k.sys",
 		{
-			{"NtUserShowCaret",0},
-			{"NtUserShowScrollBar",0},
-			{"NtUserSetCapture",0},
+			{"NtUserGetThreadState",&NONO_NtUserGetThreadState},
+			{"NtUserPeekMessage",&NONO_NtUserPeekMessage},
+			{Symbol_MaxListFlag,0}
 		}
 	}
 };
 
 
-void	HelloRoutine() 
+static ULONG64	CreateTime = 0;
+static ULONG64	ThreadLock = 0;
+static ULONG64	RundownProtect = 0;
+
+static	 SymbolGetTypeOffsetList	g_GetTypeOffsetInfoList[] =
 {
-	ULONG	GetFunctionInfoListNumber = 0;
-	ULONG	NameNumber = 0;
-	GetFunctionInfoListNumber =	sizeof(g_GetFunctionInfoList) / sizeof(char) * Symbol_ModuleNameLength + sizeof(SymbolGetName) * Symbol_NameListNumber;
-
-
-	for (int i =0 ; i < GetFunctionInfoListNumber; i ++)
 	{
-		
-		for (int j =0 ; j < Symbol_NameListNumber ; j++)
+		"ntoskrnl.exe",
 		{
-			if (strcmp(g_GetFunctionInfoList[i].NameList[j].Name, Symbol_MaxList) == 0)
-			{
-				break;
-			}
-
+			{"_ETHREAD","CreateTime",&CreateTime},
+			{"_ETHREAD","ThreadLock",&ThreadLock},
+			{"_ETHREAD","RundownProtect",&RundownProtect},
+			{Symbol_MaxListFlag,Symbol_MaxListFlag,0}
 		}
-
 	}
-
-}
+};
 
 
 NTSTATUS DispatchCommon(PDEVICE_OBJECT pObject, PIRP pIrp)
@@ -65,51 +70,121 @@ NTSTATUS DispatchCommon(PDEVICE_OBJECT pObject, PIRP pIrp)
 NTSTATUS DispatchIoctrl(PDEVICE_OBJECT pObject, PIRP pIrp)
 {
 
-	ULONG uIoctrlCode = 0;
-	PVOID pInputBuff = NULL;
-	PVOID pOutputBuff = NULL;
+	ULONG					uIoctrlCode = 0;
+	PVOID					pInputBuff = NULL;
+	PVOID					pOutputBuff = NULL;
 
-	ULONG uInputLength = 0;
-	ULONG uOutputLength = 0;
-	PIO_STACK_LOCATION pStack = NULL;
+	ULONG					uInputLength = 0;
+	ULONG					uOutputLength = 0;
+	PIO_STACK_LOCATION		pStack =	NULL;
+	NTSTATUS				Status =	STATUS_SUCCESS;
+	ULONG_PTR				Info = 0;
+
+	
 
 	pInputBuff = pOutputBuff = pIrp->AssociatedIrp.SystemBuffer;
 
 	pStack = IoGetCurrentIrpStackLocation(pIrp);
 	uInputLength = pStack->Parameters.DeviceIoControl.InputBufferLength;
 	uOutputLength = pStack->Parameters.DeviceIoControl.OutputBufferLength;
-
-
 	uIoctrlCode = pStack->Parameters.DeviceIoControl.IoControlCode;
+
 
 	switch (uIoctrlCode)
 	{
-	case CTL_HELLO:
-	{
-		DbgPrint("Hello iocontrol\n");
-		break;
-	}
-	case CTL_AcceptSymbolInfo:
-	{
-		DbgPrint("%ws\n", pInputBuff);
-		break;
-	}
-	case CTL_BYE:
-	{
-		DbgPrint("Goodbye iocontrol\n");
-		break;
-	}
-	default:
-		DbgPrint("Unknown iocontrol\n");
-		break;
+		case CTL_GetFunListSize:
+		{
+			InfoOfSizeList InfoOfsize = { 0 };
+			InfoOfsize.StructSize = sizeof(g_GetFunctionInfoList);
+			InfoOfsize.ListCount = sizeof(g_GetFunctionInfoList) / sizeof(SymbolGetFunctionInfoList);
+			memcpy(pOutputBuff, &InfoOfsize, sizeof(InfoOfsize));
+			Info = sizeof(InfoOfsize);
+			break;
+		}
+	case CTL_GetFunListInfo:
+		{
+			memcpy(pOutputBuff, &g_GetFunctionInfoList, sizeof(g_GetFunctionInfoList));
+			Info = sizeof(g_GetFunctionInfoList);
+
+			break;
+		}
+	case CTL_SendFunListInfo:
+		{
+			PSymbolGetFunctionInfoList		GetFunctionInfoList = (PSymbolGetFunctionInfoList)pInputBuff;
+			ULONG	ListCount = sizeof(g_GetFunctionInfoList) / sizeof(SymbolGetFunctionInfoList);
+
+			for (ULONG i = 0; i < ListCount; i++)
+			{
+				for (ULONG j = 0; j < Symbol_InfoListMax; j++)
+				{
+					if (strcmp(GetFunctionInfoList[i].InfoList[j].Name, Symbol_MaxListFlag) == 0)
+					{
+						break;
+					}
+					*g_GetFunctionInfoList[i].InfoList[j].ReceiveFunction = GetFunctionInfoList[i].InfoList[j].ReceiveFunction;
+				}
+			}
+			break;
+		}
+
+
+	case CTL_GetTypeListSize:
+		{
+			InfoOfSizeList InfoOfsize = { 0 };
+			InfoOfsize.StructSize = sizeof(g_GetTypeOffsetInfoList);
+			InfoOfsize.ListCount = sizeof(g_GetTypeOffsetInfoList) / sizeof(SymbolGetTypeOffsetList);
+			memcpy(pOutputBuff, &InfoOfsize, sizeof(InfoOfsize));
+			Info = sizeof(InfoOfsize);
+			break;
+		}
+	case CTL_GetTypeListInfo:
+		{
+			memcpy(pOutputBuff, &g_GetTypeOffsetInfoList, sizeof(g_GetTypeOffsetInfoList));
+			Info = sizeof(g_GetTypeOffsetInfoList);
+			break;
+		}
+	case CTL_SendTypeListInfo:
+		{
+			PSymbolGetTypeOffsetList		GetTypeInfoList = (PSymbolGetTypeOffsetList)pInputBuff;
+			ULONG	ListCount = sizeof(g_GetTypeOffsetInfoList) / sizeof(SymbolGetTypeOffsetList);
+
+			for (ULONG i = 0; i < ListCount; i++)
+			{
+				for (ULONG j = 0; j < Symbol_InfoListMax; j++)
+				{
+					if (strcmp(GetTypeInfoList[i].InfoList[j].ParentName, Symbol_MaxListFlag) == 0)
+					{
+						break;
+					}
+
+					*g_GetTypeOffsetInfoList[i].InfoList[j].Offset = (ULONG64)GetTypeInfoList[i].InfoList[j].Offset;
+				}
+			}
+			break;
+		}
+	case  CTL_DeleteMark:
+		{
+
+			IoDeleteDevice(g_pDriverObj->DeviceObject);
+			IoDeleteSymbolicLink(&SymbolName);
+
+			for (int i = 0; i < IRP_MJ_MAXIMUM_FUNCTION; ++i)
+				g_pDriverObj->MajorFunction[i] = NONO_IopInvalidDeviceRequest;
+
+			DeviceAndSymbolLinkDelete = TRUE;
+			break;
+		}
+		default:
+			DbgPrint("Unknown iocontrol\n");
+			break;
 	}
 
-	pIrp->IoStatus.Status = STATUS_SUCCESS;
-	pIrp->IoStatus.Information = 0;
+
+	pIrp->IoStatus.Status = Status;
+	pIrp->IoStatus.Information = Info;
+
 	IoCompleteRequest(pIrp, IO_NO_INCREMENT);
-
-	return STATUS_SUCCESS;
-
+	return Status;
 }
 
 
@@ -118,9 +193,9 @@ NTSTATUS	InitIoComm(PDRIVER_OBJECT pDriverObj)
 	UNICODE_STRING		DeviceName = RTL_CONSTANT_STRING(DEVICE_NAME);
 	UNICODE_STRING		SymbolName = RTL_CONSTANT_STRING(SYMBOL_NAME);
 	NTSTATUS			Status = STATUS_SUCCESS;
+	PDEVICE_OBJECT		pDeviceObject = NULL;
 
-
-	Status = IoCreateDevice(pDriverObj,0, &DeviceName, FILE_DEVICE_UNKNOWN, 0, FALSE, &pDriverObj);
+	Status = IoCreateDevice(pDriverObj,0, &DeviceName, FILE_DEVICE_UNKNOWN, 0, FALSE, &pDeviceObject);
 
 	if (!NT_SUCCESS(Status))
 	{
@@ -133,13 +208,13 @@ NTSTATUS	InitIoComm(PDRIVER_OBJECT pDriverObj)
 	//2,direct io
 	//3,neither io
 	//DO_DEVICE_INITIALIZING
-	pDriverObj->Flags |= DO_BUFFERED_IO;
+	pDeviceObject->Flags |= DO_BUFFERED_IO;
 
 
 	Status = IoCreateSymbolicLink(&SymbolName, &DeviceName);
 	if (!NT_SUCCESS(Status))
 	{
-		IoDeleteDevice(pDriverObj);
+		IoDeleteDevice(pDeviceObject);
 		DbgPrint("IoCreateSymbolicLink failed:%x\n", Status);
 		return Status;
 	}

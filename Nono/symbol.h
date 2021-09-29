@@ -3,16 +3,18 @@
 
 #include <ImageHlp.h>
 
+#pragma comment(lib, "Shlwapi.lib")
 #pragma comment(lib, "psapi.lib")
-
 #pragma comment(lib, "DbgHelp.lib")
 #pragma comment(lib, "ImageHlp.lib")
+
 #define  SystemModuleInformation 11
 #define STATUS_INFO_LENGTH_MISMATCH ((NTSTATUS)0xC0000004L)
 
+ULONG					ListCount;
 
 
-BOOLEAN EnumSymbols(char * ModuleName, EnumSymbolType	Type, PVOID * NeedList, PVOID * OutBuffer);
+BOOLEAN EnumSymbols(char * ModuleName, EnumSymbolType	Type, PVOID  NeedList);
 
 
 typedef struct _RTL_PROCESS_MODULE_INFORMATION {
