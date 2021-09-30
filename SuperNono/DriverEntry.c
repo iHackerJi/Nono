@@ -20,7 +20,7 @@ NTSTATUS	DriverEntry(PDRIVER_OBJECT	pDriverObj,PUNICODE_STRING	pReg)
 	Status = InitIoComm(pDriverObj);
 	if (!NT_SUCCESS(Status))	return STATUS_UNSUCCESSFUL;
 
-	return	STATUS_SUCCESS;
+	return	Status;
 }
 
 void	RealDriverEntry() {
