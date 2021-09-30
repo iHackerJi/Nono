@@ -23,10 +23,9 @@ NTSTATUS	DriverEntry(PDRIVER_OBJECT	pDriverObj,PUNICODE_STRING	pReg)
 	return	Status;
 }
 
-void	RealDriverEntry() {
+void	RealDriverEntry()
+{
 	//表示我们的函数与偏移已经初始化完毕了，可以做事情了
-
-
 
 
 }

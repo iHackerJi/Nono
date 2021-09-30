@@ -8,7 +8,8 @@ UNICODE_STRING			SymbolName = RTL_CONSTANT_STRING(SYMBOL_NAME);
 BOOLEAN					DeviceAndSymbolLinkDelete = FALSE;
 
 
-void		CommUnload() {
+void		CommUnload() 
+{
 	if (!DeviceAndSymbolLinkDelete)
 	{
 		IoDeleteDevice(g_pDriverObj->DeviceObject);
@@ -119,9 +120,6 @@ NTSTATUS DispatchIoctrl(PDEVICE_OBJECT pObject, PIRP pIrp)
 					*g_GetTypeOffsetInfoList[i].InfoList[j].Offset = (ULONG64)GetTypeInfoList[i].InfoList[j].Offset;
 				}
 			}
-
-			DbgPrint("xxx CreateTime = %x \r\n ThreadLock = %x \r\n RundownProtect = %x \r\n", CreateTime, ThreadLock, RundownProtect);
-
 			break;
 		}
 		case  CTL_SymbolIsSuccess:

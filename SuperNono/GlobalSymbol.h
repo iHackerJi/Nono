@@ -1,17 +1,23 @@
 #pragma once
 #include "../SymbolShare.h"
 
+typedef void	(*ObKillProcessType)(
+	PEPROCESS Process
+);
 
-PVOID	NONO_NtMapUserPhysicalPagesScatter;
-PVOID	NONO_NtCallbackReturn;
-PVOID	NONO_NtSuspendThread;
-PVOID	NONO_IopInvalidDeviceRequest;
 
-PVOID	NONO_NtUserGetThreadState;
-PVOID	NONO_NtUserPeekMessage;
+PVOID					NONO_NtMapUserPhysicalPagesScatter;
+PVOID					NONO_NtCallbackReturn;
+PVOID					NONO_NtSuspendThread;
+PVOID					NONO_IopInvalidDeviceRequest;
+PVOID					NONO_NtUserGetThreadState;
+PVOID					NONO_NtUserPeekMessage;
+ObKillProcessType		NONO_ObKillProcess;
 
 
 //最多支持 Symbol_InfoListMax 个获取的信息
+
+//这个列表除了可以获取函数之外还可以获取全局变量
 static	SymbolGetFunctionInfoList	g_GetFunctionInfoList[] =
 {
 	{
@@ -21,6 +27,7 @@ static	SymbolGetFunctionInfoList	g_GetFunctionInfoList[] =
 			{"NtCallbackReturn",&NONO_NtCallbackReturn},
 			{"NtSuspendThread",&NONO_NtSuspendThread},
 			{"IopInvalidDeviceRequest",&NONO_IopInvalidDeviceRequest},
+			{"ObKillProcess",(PVOID*)&NONO_ObKillProcess},
 			{Symbol_MaxListFlag,0}
 		}
 	},
