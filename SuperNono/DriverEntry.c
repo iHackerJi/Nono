@@ -18,11 +18,7 @@ NTSTATUS	DriverEntry(PDRIVER_OBJECT	pDriverObj,PUNICODE_STRING	pReg)
 {
 
 	pDriverObj->DriverUnload = UnloadDriver;
-
-
 	InitIoComm(pDriverObj);
-
-
 
 	 return	STATUS_SUCCESS;
 }

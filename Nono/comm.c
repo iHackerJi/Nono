@@ -131,5 +131,5 @@ void	DeleteMark()
 {
 	DWORD							OutLeng = 0;
 	DeviceIoControl(hFile, CTL_DeleteMark, NULL, 0, NULL, 0, &OutLeng, NULL);
-
 }
+

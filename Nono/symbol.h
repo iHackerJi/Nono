@@ -1,10 +1,10 @@
 #pragma once
 #include "Public.h"
-
 #include <ImageHlp.h>
 
+
+
 #pragma comment(lib, "Shlwapi.lib")
-#pragma comment(lib, "psapi.lib")
 #pragma comment(lib, "DbgHelp.lib")
 #pragma comment(lib, "ImageHlp.lib")
 

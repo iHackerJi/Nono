@@ -8,6 +8,7 @@
 
 int main() 
 {
+
 	BOOLEAN		Ret = FALSE;
 	if (InitComm())
 	{
@@ -24,9 +25,9 @@ int main()
 	
 	Ret = TRUE;
 _Exit:
-
-	DeleteMark();
+	if (Ret) DeleteMark();
 	if (hFile) CloseHandle(hFile);
+	
 
 	system("pause");
 

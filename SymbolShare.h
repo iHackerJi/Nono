@@ -24,7 +24,6 @@
 
 #define CTL_DeleteMark					MYIOCTRL_CODE(6)
 
-
 #define		Symbol_NameLength			0x50
 #define		Symbol_ModuleNameLength		0x20
 #define		Symbol_InfoListMax			0x20

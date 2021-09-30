@@ -45,7 +45,7 @@ BOOLEAN	InitSymbols(char * SymbolDownloadPath)
 
 	if (0 == GetCurrentDirectoryA(MAX_PATH, CurrentDirName))
 	{
-		printf("%s GetCurrentDirectoryA Error %d", __FUNCTION__, GetLastError());
+		printf("%s GetCurrentDirectoryA Error %d \r\n", __FUNCTION__, GetLastError());
 		return	FALSE;
 	}
 
@@ -55,7 +55,7 @@ BOOLEAN	InitSymbols(char * SymbolDownloadPath)
 	//提升调试权限
 	if (!EnableDebugPriv()) 
 	{
-		printf("%s EnableDebugPriv Error %d", __FUNCTION__, GetLastError());
+		printf("%s EnableDebugPriv Error %d \r\n", __FUNCTION__, GetLastError());
 		return	FALSE;
 	}
 
@@ -69,13 +69,13 @@ BOOLEAN	InitSymbols(char * SymbolDownloadPath)
 
 	if (-1 == sprintf(SymbolPath, "SRV*%s*http://msdl.microsoft.com/download/symbols", SymbolDownloadPath))
 	{
-		printf("%s sprintf Error %d", __FUNCTION__, GetLastError());
+		printf("%s sprintf Error %d \r\n", __FUNCTION__, GetLastError());
 		return	FALSE;
 	}
 
 	if (!SymInitialize(hProcess, SymbolPath, FALSE))
 	{
-		printf("%s SymInitialize Error %d", __FUNCTION__, GetLastError());
+		printf("%s SymInitialize Error %d \r\n", __FUNCTION__, GetLastError());
 		return	FALSE;
 	}
 
@@ -86,7 +86,7 @@ BOOLEAN	InitSymbols(char * SymbolDownloadPath)
 	{
 		if (INVALID_HANDLE_VALUE == CreateFileA(SymsrvYesName, FILE_ALL_ACCESS, FILE_SHARE_READ, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL))
 		{
-			printf("%s CreateFileA Error %d", __FUNCTION__, GetLastError());
+			printf("%s CreateFileA Error %d \r\n", __FUNCTION__, GetLastError());
 			return	FALSE;
 		}
 	}
@@ -113,7 +113,7 @@ BOOL EnumSymFunctionRoutine(
 		{
 
 			Info[i].ReceiveFunction = (PVOID*)pSymInfo->Address;
-			printf("解析到 %s %p \r\n", pSymInfo->Name, (PVOID)pSymInfo->Address);
+			printf("解析到 %s %p \r\n ", pSymInfo->Name, (PVOID)pSymInfo->Address);
 		}
 	}
 
@@ -163,7 +163,7 @@ BOOL EnumSymTyoeRoutine(
 			Ret = SymGetTypeInfo(hProcess, (DWORD64)ModuleBase, pSymInfo->Index, TI_GET_CHILDRENCOUNT, &SonCount);
 			if (!Ret)
 			{
-				printf("SymGetTypeInfo Erro =%d", GetLastError());
+				printf("SymGetTypeInfo Erro =%d \r\n", GetLastError());
 				goto _Exit;
 			}
 			SonListSize = sizeof(TI_FINDCHILDREN_PARAMS) + sizeof(ULONG) * SonCount;
@@ -174,7 +174,7 @@ BOOL EnumSymTyoeRoutine(
 			Ret = SymGetTypeInfo(hProcess, (DWORD64)ModuleBase, pSymInfo->Index, TI_FINDCHILDREN, SonList);
 			if (!Ret)
 			{
-				printf("SymGetTypeInfo Erro =%d", GetLastError());
+				printf("SymGetTypeInfo Erro =%d \r\n", GetLastError());
 				goto _Exit;
 			}
 
@@ -188,7 +188,7 @@ BOOL EnumSymTyoeRoutine(
 					Ret = SymGetTypeInfo(hProcess, (DWORD64)ModuleBase, SonList->ChildId[i], TI_GET_OFFSET, &Offset);
 					if (!Ret)
 					{
-						printf("SymGetTypeInfo Erro =%d", GetLastError());
+						printf("SymGetTypeInfo Erro =%d \r\n", GetLastError());
 						VirtualFree(TempName, 0, MEM_RELEASE);
 						goto _Exit;
 					}
@@ -232,19 +232,19 @@ BOOLEAN EnumSymbols(char * ModuleName,EnumSymbolType	Type,PVOID  NeedList)
 	//取出系统模块地址
 	if (!GetSystemDirectoryA(SystemDir, MAX_PATH))
 	{
-		printf("%s GetSystemDirectoryA Error %d", __FUNCTION__, GetLastError());
+		printf("%s GetSystemDirectoryA Error %d \r\n", __FUNCTION__, GetLastError());
 		return FALSE;
 	}
 
 	if (-1 == sprintf(ModuleNamePath, "%s\\%s", SystemDir, ModuleName))
 	{
-		printf("%s sprintf Error %d", __FUNCTION__, GetLastError());
+		printf("%s sprintf Error %d \r\n", __FUNCTION__, GetLastError());
 		return FALSE;
 	}
 
 	if (-1 == sprintf(SymbolPath, "%s\\%s", SystemDir, Symbol))
 	{
-		printf("%s sprintf Error %d", __FUNCTION__, GetLastError());
+		printf("%s sprintf Error %d \r\n", __FUNCTION__, GetLastError());
 		return FALSE;
 	}
 
@@ -257,21 +257,21 @@ BOOLEAN EnumSymbols(char * ModuleName,EnumSymbolType	Type,PVOID  NeedList)
 	
 	if (!PathFileExistsA(ModuleNamePath))
 	{
-		printf("%s PathFileExistsA Error %d", __FUNCTION__, GetLastError());
+		printf("%s PathFileExistsA Error %d \r\n", __FUNCTION__, GetLastError());
 		return FALSE;
 	}
 
 	//下载符号文件
 	if (!SymGetSymbolFile(hProcess, NULL, ModuleNamePath, sfPdb, SymFileName, MAX_PATH, SymFileName, MAX_PATH))
 	{
-		printf("%s SymGetSymbolFile Error %d", __FUNCTION__, GetLastError());
+		printf("%s SymGetSymbolFile Error %d \r\n", __FUNCTION__, GetLastError());
 		return FALSE;
 	}
 
 	ZwQuerySystemInformation = (ZwQuerySystemInformationType)GetProcAddress(LoadLibraryA("ntdll.dll"), "ZwQuerySystemInformation");
 	if (ZwQuerySystemInformation == NULL)
 	{
-		printf("%s GetZwQuerySystemInformation Error %d", __FUNCTION__, GetLastError());
+		printf("%s GetZwQuerySystemInformation Error %d \r\n", __FUNCTION__, GetLastError());
 		return FALSE;
 	}
 
@@ -279,7 +279,7 @@ BOOLEAN EnumSymbols(char * ModuleName,EnumSymbolType	Type,PVOID  NeedList)
 	Status = ZwQuerySystemInformation(SystemModuleInformation, pModule, 0, &RetLeng);
 	if (Status != STATUS_INFO_LENGTH_MISMATCH)
 	{
-		printf("%s ZwQuerySystemInformation Error %d", __FUNCTION__, GetLastError());
+		printf("%s ZwQuerySystemInformation Error %d \r\n", __FUNCTION__, GetLastError());
 		return FALSE;
 	}
 
@@ -288,7 +288,7 @@ BOOLEAN EnumSymbols(char * ModuleName,EnumSymbolType	Type,PVOID  NeedList)
 	Status = ZwQuerySystemInformation(SystemModuleInformation, pModule, RetLeng, &RetLeng);
 	if (Status != STATUS_SUCCESS)
 	{
-		printf("%s ZwQuerySystemInformation Error %d", __FUNCTION__, GetLastError());
+		printf("%s ZwQuerySystemInformation Error %d \r\n", __FUNCTION__, GetLastError());
 		goto _Exit;
 	}
 
@@ -305,7 +305,7 @@ BOOLEAN EnumSymbols(char * ModuleName,EnumSymbolType	Type,PVOID  NeedList)
 
 	if (ModuleBase == NULL && ModuleSize == 0)
 	{
-		printf("%s GetModule Error %d", __FUNCTION__, GetLastError());
+		printf("%s GetModule Error %d \r\n", __FUNCTION__, GetLastError());
 		goto _Exit;
 	}
 
@@ -313,7 +313,7 @@ BOOLEAN EnumSymbols(char * ModuleName,EnumSymbolType	Type,PVOID  NeedList)
 	pImage = ImageLoad(ModuleNamePath, NULL);
 	if (pImage == NULL)
 	{
-		printf("%s ImageLoad Error %d", __FUNCTION__, GetLastError());
+		printf("%s ImageLoad Error %d \r\n", __FUNCTION__, GetLastError());
 		goto _Exit;
 	}
 
@@ -321,7 +321,7 @@ BOOLEAN EnumSymbols(char * ModuleName,EnumSymbolType	Type,PVOID  NeedList)
 	//加载符号并解析
 	if (!SymLoadModule64(hProcess, pImage->hFile, pImage->ModuleName, NULL, (DWORD64)ModuleBase, ModuleSize))
 	{
-		printf("%s SymLoadModule64 Error %d", __FUNCTION__, GetLastError());
+		printf("%s SymLoadModule64 Error %d \r\n", __FUNCTION__, GetLastError());
 		goto _Exit;
 	}
 	
@@ -347,7 +347,7 @@ BOOLEAN EnumSymbols(char * ModuleName,EnumSymbolType	Type,PVOID  NeedList)
 
 			if (!SymEnumSymbols(hProcess, (ULONG64)ModuleBase, NULL, EnumSymFunctionRoutine, NeedList))
 			{
-				printf("%s SymEnumSymbols Error %d", __FUNCTION__, GetLastError());
+				printf("%s SymEnumSymbols Error %d \r\n", __FUNCTION__, GetLastError());
 				goto _Exit;
 			}
 			break;

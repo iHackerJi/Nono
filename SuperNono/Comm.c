@@ -90,7 +90,6 @@ NTSTATUS DispatchIoctrl(PDEVICE_OBJECT pObject, PIRP pIrp)
 	NTSTATUS				Status =	STATUS_SUCCESS;
 	ULONG_PTR				Info = 0;
 
-	
 
 	pInputBuff = pOutputBuff = pIrp->AssociatedIrp.SystemBuffer;
 
