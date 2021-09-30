@@ -2,10 +2,6 @@
 #include "comm.h"
 
 
-
-
-
-
 void	UnloadDriver(PDRIVER_OBJECT	pDriverObj) 
 {
 	CommUnload();
@@ -14,11 +10,23 @@ void	UnloadDriver(PDRIVER_OBJECT	pDriverObj)
 }
 
 
+
 NTSTATUS	DriverEntry(PDRIVER_OBJECT	pDriverObj,PUNICODE_STRING	pReg) 
 {
-
+	NTSTATUS	Status = STATUS_SUCCESS;
 	pDriverObj->DriverUnload = UnloadDriver;
-	InitIoComm(pDriverObj);
 
-	 return	STATUS_SUCCESS;
+
+	Status = InitIoComm(pDriverObj);
+	if (!NT_SUCCESS(Status))	return STATUS_UNSUCCESSFUL;
+
+	return	STATUS_SUCCESS;
+}
+
+void	RealDriverEntry() {
+	//表示我们的函数与偏移已经初始化完毕了，可以做事情了
+
+
+
+
 }

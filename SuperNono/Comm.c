@@ -1,61 +1,11 @@
 #include "Comm.h"
 
 
+
 PDRIVER_OBJECT			g_pDriverObj = NULL;;
 UNICODE_STRING			DeviceName = RTL_CONSTANT_STRING(DEVICE_NAME);
 UNICODE_STRING			SymbolName = RTL_CONSTANT_STRING(SYMBOL_NAME);
 BOOLEAN					DeviceAndSymbolLinkDelete = FALSE;
-
-
-PVOID	NONO_NtMapUserPhysicalPagesScatter = 0;
-PVOID	NONO_NtCallbackReturn = 0;
-PVOID	NONO_NtSuspendThread = 0;
-PVOID	NONO_IopInvalidDeviceRequest = 0;
-
-PVOID	NONO_NtUserGetThreadState = 0;
-PVOID	NONO_NtUserPeekMessage = 0;
-
-
-//最多支持 Symbol_InfoListMax 个获取的信息
-static	SymbolGetFunctionInfoList	g_GetFunctionInfoList[] =
-{
-	{
-		"ntoskrnl.exe",
-		{
-			{"NtMapUserPhysicalPagesScatter",&NONO_NtMapUserPhysicalPagesScatter},
-			{"NtCallbackReturn",&NONO_NtCallbackReturn},
-			{"NtSuspendThread",&NONO_NtSuspendThread},
-			{"IopInvalidDeviceRequest",&NONO_IopInvalidDeviceRequest},
-			{Symbol_MaxListFlag,0}
-		}
-	},
-	{
-		"win32k.sys",
-		{
-			{"NtUserGetThreadState",&NONO_NtUserGetThreadState},
-			{"NtUserPeekMessage",&NONO_NtUserPeekMessage},
-			{Symbol_MaxListFlag,0}
-		}
-	}
-};
-
-
-static ULONG64	CreateTime = 0;
-static ULONG64	ThreadLock = 0;
-static ULONG64	RundownProtect = 0;
-
-static	 SymbolGetTypeOffsetList	g_GetTypeOffsetInfoList[] =
-{
-	{
-		"ntoskrnl.exe",
-		{
-			{"_ETHREAD","CreateTime",&CreateTime},
-			{"_ETHREAD","ThreadLock",&ThreadLock},
-			{"_ETHREAD","RundownProtect",&RundownProtect},
-			{Symbol_MaxListFlag,Symbol_MaxListFlag,0}
-		}
-	}
-};
 
 
 void		CommUnload() {
@@ -169,17 +119,23 @@ NTSTATUS DispatchIoctrl(PDEVICE_OBJECT pObject, PIRP pIrp)
 					*g_GetTypeOffsetInfoList[i].InfoList[j].Offset = (ULONG64)GetTypeInfoList[i].InfoList[j].Offset;
 				}
 			}
+
+			DbgPrint("xxx CreateTime = %x \r\n ThreadLock = %x \r\n RundownProtect = %x \r\n", CreateTime, ThreadLock, RundownProtect);
+
 			break;
 		}
-		case  CTL_DeleteMark:
+		case  CTL_SymbolIsSuccess:
 		{
-
+			//抹掉IO通讯的痕迹
 			CommUnload();
 
-			for (int i = 0; i < IRP_MJ_MAXIMUM_FUNCTION +1 ; ++i)
+			for (int i = 0; i < IRP_MJ_MAXIMUM_FUNCTION + 1; ++i)
 				g_pDriverObj->MajorFunction[i] = NONO_IopInvalidDeviceRequest;
 
 			DeviceAndSymbolLinkDelete = TRUE;
+
+			//调用主函数
+			RealDriverEntry();
 			break;
 		}
 		default:
@@ -200,6 +156,8 @@ NTSTATUS	InitIoComm(PDRIVER_OBJECT pDriverObj)
 
 	NTSTATUS			Status = STATUS_SUCCESS;
 	PDEVICE_OBJECT		pDeviceObject = NULL;
+	OBJECT_ATTRIBUTES	 ObjectAttributes = {0};
+
 
 	g_pDriverObj = pDriverObj;
 
@@ -233,6 +191,8 @@ NTSTATUS	InitIoComm(PDRIVER_OBJECT pDriverObj)
 	}
 
 	pDriverObj->MajorFunction[IRP_MJ_DEVICE_CONTROL] = DispatchIoctrl;
+
+
 
 
 	return Status;

@@ -25,9 +25,14 @@ int main()
 	
 	Ret = TRUE;
 _Exit:
-	if (Ret) DeleteMark();
+
+
+	if (Ret)
+	{
+		printf("发送信号");
+		SendSuccessSignal();
+	}
 	if (hFile) CloseHandle(hFile);
-	
 
 	system("pause");
 

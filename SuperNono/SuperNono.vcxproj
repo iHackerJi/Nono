@@ -194,6 +194,7 @@
   <ItemGroup>
     <ClInclude Include="..\SymbolShare.h" />
     <ClInclude Include="Comm.h" />
+    <ClInclude Include="GlobalSymbol.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -127,9 +127,10 @@ _Exit:
 	return Res;
 }
 
-void	DeleteMark()
+
+void	SendSuccessSignal()
 {
 	DWORD							OutLeng = 0;
-	DeviceIoControl(hFile, CTL_DeleteMark, NULL, 0, NULL, 0, &OutLeng, NULL);
+	DeviceIoControl(hFile, CTL_SymbolIsSuccess, NULL, 0, NULL, 0, &OutLeng, NULL);
 }
 

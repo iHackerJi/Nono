@@ -96,7 +96,7 @@ BOOLEAN	InitSymbols(char * SymbolDownloadPath)
 	return	 TRUE;
 }
 
-BOOL EnumSymFunctionRoutine(
+BOOL CALLBACK EnumSymFunctionRoutine(
 	PSYMBOL_INFO pSymInfo,
 	ULONG SymbolSize,
 	PVOID UserContext
@@ -120,7 +120,7 @@ BOOL EnumSymFunctionRoutine(
 	return	TRUE;
 }
 
-BOOL EnumSymTyoeRoutine(
+BOOL CALLBACK EnumSymTyoeRoutine(
 	PSYMBOL_INFO pSymInfo,
 	ULONG SymbolSize,
 	PVOID UserContext

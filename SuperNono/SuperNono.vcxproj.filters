@@ -36,5 +36,8 @@
     <ClInclude Include="..\SymbolShare.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="GlobalSymbol.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

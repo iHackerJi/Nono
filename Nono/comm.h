@@ -4,7 +4,8 @@
 
 HANDLE	hFile;
 
-BOOLEAN	InitComm();
-BOOLEAN	InitSymbolFunctionList();
-BOOLEAN	InitSymbolTypeList();
-void	DeleteMark();
+BOOLEAN		InitComm();
+BOOLEAN		InitSymbolFunctionList();
+BOOLEAN		InitSymbolTypeList();
+
+void		SendSuccessSignal();
