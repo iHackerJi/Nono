@@ -8,4 +8,3 @@
 
 
 HANDLE		hProcess;
-char		CurrentDirName[MAX_PATH];

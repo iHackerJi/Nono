@@ -40,6 +40,14 @@ BOOLEAN	InitSymbols(char * SymbolDownloadPath)
 	char	SymbolPath[MAX_PATH] = { 0 };
 	int		Ret = 0;
 	char	SymsrvYesName[MAX_PATH] = { 0 };
+	char	CurrentDirName[MAX_PATH];
+
+
+	if (0 == GetCurrentDirectoryA(MAX_PATH, CurrentDirName))
+	{
+		printf("%s GetCurrentDirectoryA Error %d", __FUNCTION__, GetLastError());
+		return	FALSE;
+	}
 
 
 	hProcess = GetCurrentProcess();
@@ -207,6 +215,10 @@ BOOLEAN EnumSymbols(char * ModuleName,EnumSymbolType	Type,PVOID  NeedList)
 	char SymFileName[MAX_PATH] =  { 0 };
 	char ModuleNamePath[MAX_PATH] = { 0 };
 
+	char SystemDir[MAX_PATH] = { 0 };
+	char SymbolPath[MAX_PATH] = { 0 };
+	char Symbol[MAX_PATH] = "NonoSymbol";
+
 	PRTL_PROCESS_MODULES	pModule = NULL;
 	BOOLEAN					Ret = FALSE;
 	ULONG					RetLeng = 0;
@@ -216,27 +228,29 @@ BOOLEAN EnumSymbols(char * ModuleName,EnumSymbolType	Type,PVOID  NeedList)
 	DWORD					ModuleSize = 0;
 	PLOADED_IMAGE			pImage = NULL;
 
-	if (0 == GetCurrentDirectoryA(MAX_PATH, CurrentDirName))
-	{
-		printf("%s GetCurrentDirectoryA Error %d", __FUNCTION__, GetLastError());
-		return	FALSE;
-	}
 
 	//取出系统模块地址
-	if (!GetSystemDirectoryA(ModuleNamePath, MAX_PATH))
+	if (!GetSystemDirectoryA(SystemDir, MAX_PATH))
 	{
 		printf("%s GetSystemDirectoryA Error %d", __FUNCTION__, GetLastError());
 		return FALSE;
 	}
 
-	if (-1 == sprintf(ModuleNamePath, "%s\\%s", ModuleNamePath, ModuleName))
+	if (-1 == sprintf(ModuleNamePath, "%s\\%s", SystemDir, ModuleName))
 	{
 		printf("%s sprintf Error %d", __FUNCTION__, GetLastError());
 		return FALSE;
 	}
+
+	if (-1 == sprintf(SymbolPath, "%s\\%s", SystemDir, Symbol))
+	{
+		printf("%s sprintf Error %d", __FUNCTION__, GetLastError());
+		return FALSE;
+	}
+
 	
 	//初始化符号路径
-	if (!InitSymbols(CurrentDirName)) 
+	if (!InitSymbols(SymbolPath))
 	{
 		return FALSE;
 	}
