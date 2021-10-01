@@ -4,6 +4,7 @@
 
 HANDLE	hFile;
 
+
 BOOLEAN		InitComm();
 BOOLEAN		InitSymbolFunctionList();
 BOOLEAN		InitSymbolTypeList();

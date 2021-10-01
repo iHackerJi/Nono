@@ -9,7 +9,7 @@ BOOLEAN	InitComm()
 	hFile = CreateFileA(DEVICE_NAME, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 	if (hFile == INVALID_HANDLE_VALUE)
 	{
-		printf("%s GetCurrentDirectoryA Error %d \r\n", __FUNCTION__, GetLastError());
+		printf("%s CreateFileA Error %d \r\n", __FUNCTION__, GetLastError());
 		return	FALSE;
 	}
 	return TRUE;

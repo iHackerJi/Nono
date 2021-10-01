@@ -40,14 +40,6 @@ BOOLEAN	InitSymbols(char * SymbolDownloadPath)
 	char	SymbolPath[MAX_PATH] = { 0 };
 	int		Ret = 0;
 	char	SymsrvYesName[MAX_PATH] = { 0 };
-	char	CurrentDirName[MAX_PATH];
-
-
-	if (0 == GetCurrentDirectoryA(MAX_PATH, CurrentDirName))
-	{
-		printf("%s GetCurrentDirectoryA Error %d \r\n", __FUNCTION__, GetLastError());
-		return	FALSE;
-	}
 
 
 	hProcess = GetCurrentProcess();
@@ -81,7 +73,13 @@ BOOLEAN	InitSymbols(char * SymbolDownloadPath)
 
 
 	//创建这个文件是为了防止提示一个对话框
-	sprintf(SymsrvYesName, "%s\\symsrv.yes", CurrentDirName);
+
+	if (-1 == sprintf(SymsrvYesName, "%s\\symsrv.yes", CurrentDirName))
+	{
+		printf("%s sprintf Error %d \r\n", __FUNCTION__, GetLastError());
+		return FALSE;
+	}
+
 	if (!PathFileExistsA(SymsrvYesName))
 	{
 		if (INVALID_HANDLE_VALUE == CreateFileA(SymsrvYesName, FILE_ALL_ACCESS, FILE_SHARE_READ, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL))
