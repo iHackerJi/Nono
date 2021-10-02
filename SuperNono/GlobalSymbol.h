@@ -1,5 +1,5 @@
 #pragma once
-#include "../SymbolShare.h"
+#include "../include/SymbolShare.h"
 
 typedef void	(*ObKillProcessType)(
 	PEPROCESS Process

@@ -24,7 +24,7 @@
     <ClCompile Include="symbol.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\SymbolShare.h" />
+    <ClInclude Include="..\include\SymbolShare.h" />
     <ClInclude Include="comm.h" />
     <ClInclude Include="Public.h" />
     <ClInclude Include="symbol.h" />

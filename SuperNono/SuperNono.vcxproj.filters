@@ -33,10 +33,10 @@
     <ClInclude Include="Comm.h">
       <Filter>Comm</Filter>
     </ClInclude>
-    <ClInclude Include="..\SymbolShare.h">
+    <ClInclude Include="GlobalSymbol.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GlobalSymbol.h">
+    <ClInclude Include="..\include\SymbolShare.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

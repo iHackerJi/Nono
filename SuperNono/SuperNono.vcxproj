@@ -192,7 +192,7 @@
     <ClCompile Include="DriverEntry.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\SymbolShare.h" />
+    <ClInclude Include="..\include\SymbolShare.h" />
     <ClInclude Include="Comm.h" />
     <ClInclude Include="GlobalSymbol.h" />
   </ItemGroup>

@@ -6,7 +6,7 @@
 #include <windows.h>
 #include <shlwapi.h>
 #include <subauth.h>
-#include "../SymbolShare.h"
+#include "../include/SymbolShare.h"
 
 
 

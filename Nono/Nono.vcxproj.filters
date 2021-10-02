@@ -35,7 +35,7 @@
     <ClInclude Include="Public.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="..\SymbolShare.h">
+    <ClInclude Include="..\include\SymbolShare.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
